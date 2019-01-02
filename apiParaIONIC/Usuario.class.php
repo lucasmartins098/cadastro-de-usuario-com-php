@@ -12,11 +12,11 @@
 			$this->nome = $nome;
     }
     
-    public function cadastrarUsuario($name){
+    public function cadastrarUsuario($nome){
       try{
           $pdo = parent::getDB();
           $query = $pdo->prepare("select * from usuario where nome = ?");
-          $query->bindValue(1, $name);	
+          $query->bindValue(1, $nome);	
           $query->execute();
         
             if($query->rowCount() >= 1)
@@ -26,8 +26,9 @@
               else
                 {
                 $stmt2 = $pdo->prepare("INSERT INTO usuario(nome) VALUES(?)");
-                $stmt2->bindValue(1, $name);
+                $stmt2->bindValue(1, $nome);
                 $stmt2->execute();
+                echo "Usuário ".$nome." inserido com sucesso";
                 } 
           }//fim do try
                 catch(PDOException $e)
@@ -36,6 +37,22 @@
                 }
         }
 
+		public function deletarUsuario($idUsuario)
+       {
+        try
+        {
+          $pdo = parent::getDB();
+          $query = $pdo->prepare("DELETE FROM Usuario WHERE id = ?");
+          $query->bindParam(1, $idUsuario);
+          $query->execute();
+
+          echo ('Usuário excluído com sucesso');
+        }
+          catch(PDOException $e)
+          {
+              echo $e->getMessage();
+          }
+       }
     
        public function editarUsuario($idUsuario,$nome)
        {
@@ -47,7 +64,7 @@
           $query->bindParam(2, $idUsuario);
           $query->execute();
 
-          echo json_encode('Usuário editado com sucesso');
+          echo ('Usuário editado com sucesso');
         }
           catch(PDOException $e)
           {
@@ -61,7 +78,7 @@
           {
             $data = array();
             $pdo = parent::getDB();
-            $query = $pdo->prepare("SELECT id, nome FROM Usuario ORDER BY name ASC");
+            $query = $pdo->prepare("SELECT id, nome FROM Usuario ORDER BY nome ASC");
               while($row  = $query->fetch(PDO::FETCH_OBJ))
               {
                 $data[] = $row;

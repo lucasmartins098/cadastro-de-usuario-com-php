@@ -1,22 +1,23 @@
 import { Component } from '@angular/core';
-import { IonicPage, NavController, NavParams, ToastController } from 'ionic-angular';
+import { IonicPage, NavController, NavParams, ToastController, AlertController } from 'ionic-angular';
 import { FormGroup, Validators, FormBuilder } from '@angular/forms';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Http } from '@angular/http';
+import { EditarUsuarioPage } from '../editar-usuario/editar-usuario';
 
 @Component({
- selector: 'page-cadastro',
- templateUrl: 'cadastro.html'
+   selector: 'page-cadastro',
+   templateUrl: 'cadastro.html'
 })
- 
+
 export class CadastroPage {
- /**
-    * @nome form
-    * @type {FormGroup}
-    * @public
-    * @description     Define FormGroup property for managing form validation / data retrieval
-    */
-   public form : FormGroup;
+   /**
+      * @nome form
+      * @type {FormGroup}
+      * @public
+      * @description     Define FormGroup property for managing form validation / data retrieval
+      */
+   public form: FormGroup;
 
    /**
     * @nome technologynome
@@ -32,7 +33,7 @@ export class CadastroPage {
     * @public
     * @description     Model for managing technologyDescription field
     */
-   public technologyDescription  : any;
+   public technologyDescription: any;
 
    /**
     * @nome isEdited
@@ -59,36 +60,39 @@ export class CadastroPage {
    public pageTitle: string;
 
    /**
-    * @nome recordID
+    * @nome IdUsuario
     * @type {String}
     * @public
-    * @description     Property to store the recordID for when an existing entry is being edited
+    * @description     Property to store the IdUsuario for when an existing entry is being edited
     */
-   public recordID: any      = null;
+   public IdUsuario: any = null;
 
    /**
-    * @nome baseURI
+    * @nome baseURL
     * @type {String}
     * @public
-    * @description     Remote URI for retrieving data from and sending data to
+    * @description Armazena o link do servidor
     */
-   private baseURI: string  = "http://localhost/apiParaIONIC/api.php/";
+   private baseURL: string = "http://localhost/apiParaIONIC/api.php/";
+   private LeituraURL: string = "http://localhost/apiParaIONIC/apiLeitura.php/";
 
-   data:any = {};
+   data: any = {};
+   public itens: Array<any> = [];
 
    // Initialise module classes
-   constructor(public navCtrl    : NavController,
-               public http       : Http,
-               public NP         : NavParams,
-               public fb         : FormBuilder,
-               public toastCtrl  : ToastController)
-   {
-      this.data.response = "";
-      
+   constructor(public navCtrl: NavController,
+      public http: Http,
+      public NP: NavParams,
+      public fb: FormBuilder,
+      public toastCtrl: ToastController,
+      public alertCtrl: AlertController ) {
+      this.data.response = ""
+      this.data.nome = ""
+      //this.IdUsuario = ""
       // Create form builder validation rules
       this.form = fb.group({
-         "nome"                  : ["", Validators.required],
-         "description"           : ["", Validators.required]
+         "nome": ["", Validators.required],
+         "description": ["", Validators.required]
       });
    }
 
@@ -101,22 +105,51 @@ export class CadastroPage {
     * @method ionViewWillEnter
     * @return {None}
     */
-   ionViewWillEnter() : void
-   {
+   ionViewWillEnter(): void {
       this.resetFields();
 
-      if(this.NP.get("record"))
-      {
-         this.isEdited      = true;
-         this.selectEntry(this.NP.get("record"));
-         this.pageTitle     = 'Amend entry';
-      }
-      else
-      {
-         this.isEdited      = false;
-         this.pageTitle     = 'Create entry';
-      }
+      //if (this.NP.get("record")) {
+      //this.isEdited = true;
+      this.carregarUsuarios();
+      //this.selectEntry(this.NP.get("record"));
+      //this.pageTitle = 'Amend entry';
+      // }
+      // else {
+      //    this.isEdited = false;
+      //    this.pageTitle = 'Create entry';
+      // }
    }
+
+   showConfirmAlert(item) {
+      const confirm = this.alertCtrl.create({
+         title: 'Excluir usuário permanentemente',
+         message: 'Deseja excluir usuário?',
+         buttons: [
+           {
+             text: 'Não',
+             handler: () => {
+               console.log('Não');
+             }
+           },
+           {
+             text: 'Sim',
+             handler: () => {
+               console.log('Sim');
+               console.log(item);
+              this.deletarUsuario(item);
+             }
+           }
+         ]
+       });
+       confirm.present();
+    }
+
+
+    abrirParaEdicao(item){
+      console.log("abrir" + item);
+      console.log("abrir" + item.id);
+      this.navCtrl.push(EditarUsuarioPage, { id: item.id });
+    }
 
    /**
     * Assign the navigation retrieved data to properties
@@ -127,12 +160,14 @@ export class CadastroPage {
     * @param item 		{any} 			Navigation data
     * @return {None}
     */
-   selectEntry(item : any) : void
-   {
-      this.technologynome        = item.nome;
-      this.technologyDescription = item.description;
-      this.recordID              = item.id;
-   }
+   //    selectEntry(item: any): void {
+   // console.log(this.data.nome);
+   // console.log(this.IdUsuario);
+
+
+   //       this.data.nome = item.nome;
+   //       this.IdUsuario = item.id;
+   //    }
 
    /**
     * Save a new record that has been added to the page's HTML form
@@ -144,26 +179,29 @@ export class CadastroPage {
     * @param description 	{String} 			Description value from form field
     * @return {None}
     */
-   cadastrar(nome : string) : void
-   {
-      let headers 	: any		= new HttpHeaders({ 'Content-Type': 'application/json' }),
-          options 	: any		= { "key" : "Cadastro", "nome" : nome},
-          url       : any      	= this.baseURI + "manage-data.php";
+   cadastrar(): void {
+      console.log(this.data.nome);
+      if (this.data.nome == "") {
+         this.sendNotification("Não deixe o campo nome em branco!!");
+      }
+      else {
+         let headers: any = new HttpHeaders({ 'Content-Type': 'application/json' }),
+            options: any = { "key": "cadastrar", "nome": this.data.nome },
+            url: any = this.baseURL + "manage-data.php";
 
-      this.http.post(url, JSON.stringify(options), headers)
-      .subscribe((data : any) =>
-      {
-         this.data.response = data["_body"]; //https://stackoverflow.com/questions/39574305/property-body-does-not-exist-on-type-response
-         // If the request was successful notify the user
-         this.hideForm   = true;
-         this.sendNotification(`O nome: ${nome} foi adicionado`);
-      },
-      (error : any) =>
-      {
-         this.sendNotification('Something went wrong!');
-      });
+         this.http.post(url, JSON.stringify(options), headers)
+            .subscribe((data: any) => {
+               this.data.response = data["_body"]; //https://stackoverflow.com/questions/39574305/property-body-does-not-exist-on-type-response
+               // Usuário tem um feedback da ação de tentar inserir usuário
+               this.hideForm = true;
+               this.sendNotification(this.data.response = data["_body"]);
+            },
+               (error: any) => {
+                  this.sendNotification('Something went wrong!');
+               });
+         this.carregarUsuarios()
+      }
    }
-
    /**
     * Update an existing record that has been edited in the page's HTML form
     * Use angular's http post method to submit the record data
@@ -175,24 +213,21 @@ export class CadastroPage {
     * @param description 	{String} 			Description value from form field
     * @return {None}
     */
-   updateEntry(nome : string, description : string) : void
-   {
-      let headers 	: any		= new HttpHeaders({ 'Content-Type': 'application/json' }),
-          options 	: any		= { "key" : "update", "nome" : nome, "description" : description, "recordID" : this.recordID},
-          url       : any      	= this.baseURI + "manage-data.php";
+   updateEntry(nome: string, description: string): void {
+      let headers: any = new HttpHeaders({ 'Content-Type': 'application/json' }),
+         options: any = { "key": "update", "nome": nome, "description": description, "IdUsuario": this.IdUsuario },
+         url: any = this.baseURL + "manage-data.php";
 
       this.http
-      .post(url, JSON.stringify(options), headers)
-      .subscribe(data =>
-      {
-         // If the request was successful notify the user
-         this.hideForm  =  true;
-         this.sendNotification(`Congratulations the technology: ${nome} was successfully updated`);
-      },
-      (error : any) =>
-      {
-         this.sendNotification('Something went wrong!');
-      });
+         .post(url, JSON.stringify(options), headers)
+         .subscribe(data => {
+            // If the request was successful notify the user
+            this.hideForm = true;
+            this.sendNotification(`Congratulations the technology: ${nome} was successfully updated`);
+         },
+            (error: any) => {
+               this.sendNotification('Something went wrong!');
+            });
    }
 
    /**
@@ -201,27 +236,47 @@ export class CadastroPage {
     * to our remote PHP script
     *
     * @public
-    * @method deleteEntry
+    * @method deletarUsuario
     * @return {None}
     */
-   deleteEntry() : void
-   {
-      let nome      : string 	= this.form.controls["nome"].value,
-          headers 	: any		= new HttpHeaders({ 'Content-Type': 'application/json' }),
-          options 	: any		= { "key" : "delete", "recordID" : this.recordID},
-          url       : any      	= this.baseURI + "manage-data.php";
+   deletarUsuario(item): void {
+      this.IdUsuario = item.id;
+      console.log(this.IdUsuario);
+      let nome: string = this.form.controls["nome"].value,
+         headers: any = new HttpHeaders({ 'Content-Type': 'application/json' }),
+         options: any = { "key": "deletar", "IdUsuario": this.IdUsuario },
+         url: any = this.baseURL;
 
       this.http
-      .post(url, JSON.stringify(options), headers)
-      .subscribe(data =>
-      {
-         this.hideForm     = true;
-         this.sendNotification(`Congratulations the technology: ${nome} was successfully deleted`);
-      },
-      (error : any) =>
-      {
-         this.sendNotification('Something went wrong!');
-      });
+         .post(url, JSON.stringify(options), headers)
+         .subscribe(data => {
+            this.hideForm = true;
+            //this.sendNotification(`O usuário: ${nome} foi deletado`);
+            this.sendNotification(this.data.response = data["_body"]);
+         },
+            (error: any) => {
+               this.sendNotification('Não deletado');
+            });
+      this.carregarUsuarios();
+   }
+
+   carregarUsuarios(): void {
+      this.http
+         .get(this.LeituraURL)
+         .subscribe((data: any) => {
+            //console.log(data["_body"].nome);
+            console.dir(data);
+            //const retorno = data;
+            this.itens = JSON.parse(data._body);
+            console.log("itens");
+            console.log(this.itens.length);
+            for (let i = 0; i <= this.itens.length; i++) {
+               console.log(this.itens[i]);
+            }
+         },
+            (error: any) => {
+               console.dir(error);
+            });
    }
 
    /**
@@ -233,20 +288,20 @@ export class CadastroPage {
     * @method saveEntry
     * @return {None}
     */
-   saveEntry() : void
-   {
-      let nome          : string = this.form.controls["nome"].value,
-          description   : string    = this.form.controls["description"].value;
+   // saveEntry() : void
+   // {
+   //    let nome          : string = this.form.controls["nome"].value,
+   //        description   : string    = this.form.controls["description"].value;
 
-      if(this.isEdited)
-      {
-         this.updateEntry(nome, description);
-      }
-      else
-      {
-         this.cadastrar(nome);
-      }
-   }
+   //    if(this.isEdited)
+   //    {
+   //       this.updateEntry(nome, description);
+   //    }
+   //    else
+   //    {
+   //       this.cadastrar(nome);
+   //    }
+   // }
 
    /**
     * Clear values in the page's HTML form fields
@@ -255,10 +310,9 @@ export class CadastroPage {
     * @method resetFields
     * @return {None}
     */
-   resetFields() : void
-   {
-      this.technologynome           = "";
-      this.technologyDescription    = "";
+   resetFields(): void {
+      this.technologynome = "";
+      this.technologyDescription = "";
    }
 
    /**
@@ -269,13 +323,19 @@ export class CadastroPage {
     * @param message 	{String} 			Message to be displayed in the notification
     * @return {None}
     */
-   sendNotification(message : string)  : void
-   {
+   sendNotification(message: string): void {
       let notification = this.toastCtrl.create({
-          message       : message,
-          duration      : 3000
+         message: message,
+         duration: 3000
       });
       notification.present();
    }
 
+   teste() {
+      console.log("teste");
+   }
+
+   teste2() {
+      console.log("teste2");
+   }
 }

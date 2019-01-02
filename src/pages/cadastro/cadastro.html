@@ -15,16 +15,15 @@
 <ion-content padding>
   <ion-list>
     <ion-item>
-      <ion-label floating>Nome</ion-label><!--[(ngModel)]="data.nome"-->
-      <ion-input type="text" name="nome" ></ion-input>
+      <ion-label floating>Nome</ion-label>
+      <ion-input type="text" name="nome" [(ngModel)]="data.nome"></ion-input>
     </ion-item>
-
-    <button ion-button block (click)="cadastrar(nome)">ENVIAR</button>
+    <button ion-button block (click)="cadastrar()">ENVIAR</button>
   </ion-list>
 
   <ion-card>
     <ion-card-header>
-      Response
+      Resposta do PHP
     </ion-card-header>
 
     <ion-card-content>
@@ -32,15 +31,33 @@
     </ion-card-content>
   </ion-card>
 
-  <!-- <ion-card *ngFor="let dado of data">
-    <ion-card-header>
-      Nomes Adicinados: 
-    </ion-card-header>
+  <h3><p>Nomes Adicionados</p></h3>
 
-    <ion-card-content>
-      <b>{{dado.nome}}</b>
-    </ion-card-content>
-  </ion-card> -->
+  <ion-grid>
+      <ion-row>
+        <ion-col>
+            ID
+        </ion-col>
+        <ion-col>
+            Nome
+        </ion-col>
+        <ion-col>
+            Ação
+        </ion-col>
+      </ion-row>
+      <ion-row *ngFor="let item of itens">
+        <ion-col id='id' name='id'>
+            {{item.id}}
+        </ion-col>
+        <ion-col>
+            {{item.nome}}
+        </ion-col>
+        <ion-col>
+            <button ion-button (click)="abrirParaEdicao(item)">Editar</button> <hr> <button ion-button color="danger" (click)="showConfirmAlert(item)">Deletar</button>
+        </ion-col>
+      </ion-row>
+    </ion-grid>
+
 
 
 </ion-content>

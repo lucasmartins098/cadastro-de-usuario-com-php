@@ -23,28 +23,48 @@
     //http://stackoverflow.com/questions/15485354/angular-http-post-to-php-and-undefined
     $postdata = file_get_contents("php://input");
     
-    if (isset($postdata)) {
+    //if (isset($postdata)) {
+
+        $json    =  file_get_contents('php://input');
+        $obj     =  json_decode($json);
+        $key     =  strip_tags($obj->key);
+
         $request = json_decode($postdata);
-        $nome = $request->nome;
-        $idUsuario = $request->idUsuario;
         $usuario = new Usuario;
 
         $key = strip_tags($obj->key);
         switch($key)
          {
-         CASE "Cadastro" :
+         CASE "cadastrar" :
+         $nome = $obj->nome;
          $usuario->cadastrarUsuario($nome);
          break;
-         CASE "Editar":
-         $usuario->editarUsuario($idUsuario,$nome);
+         CASE "deletar" :
+         $idUsuario =  $obj->IdUsuario;
+		 if(is_null($idUsuario)){
+			 echo "usuario nulo".$idUsuario;
+		 }
+		else{
+         $usuario->deletarUsuario($idUsuario);
+		 }
          break;
-         CASE "Listar":
+         CASE "editar":
+         $idUsuario =  $obj->IdUsuario;
+         $nome = $obj->nome;
+		 if(is_null($idUsuario) || is_null($nome)){
+			 echo "Nome ou Id não pode ser nulo".$idUsuario;
+		 }
+		else{
+         $usuario->editarUsuario($idUsuario,$nome);
+		}
+		 break;
+         CASE "listar":
          $usuario->listarUsuario();
          break;
          }
-    else 
-    {
-        echo "Os parametros estão nulos";
-    }
-   }
+//    }
+//    else 
+//     {
+//         echo "Os parametros estão nulos";
+//     }
 ?>

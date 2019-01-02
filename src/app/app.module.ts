@@ -4,11 +4,15 @@ import { IonicApp, IonicErrorHandler, IonicModule } from 'ionic-angular';
 import { SplashScreen } from '@ionic-native/splash-screen';
 import { StatusBar } from '@ionic-native/status-bar';
 import { HttpModule} from '@angular/http';
- 
+
+//import { Camera } from '@ionic-native/streaming-media';
+
 import { MyApp } from './app.component';
 import { HomePage } from '../pages/home/home';
 import { CadastroPage } from '../pages/cadastro/cadastro';
+import { EditarUsuarioPageModule } from '../pages/editar-usuario/editar-usuario.module';
  
+
 @NgModule({
  declarations: [
  MyApp,
@@ -18,7 +22,8 @@ import { CadastroPage } from '../pages/cadastro/cadastro';
  imports: [
  BrowserModule,
  IonicModule.forRoot(MyApp),
-HttpModule
+ HttpModule,
+ EditarUsuarioPageModule
  ],
  bootstrap: [IonicApp],
  entryComponents: [
@@ -29,6 +34,7 @@ HttpModule
  providers: [
  StatusBar,
  SplashScreen,
+ //Camera,
  {provide: ErrorHandler, useClass: IonicErrorHandler}
  ]
 })
